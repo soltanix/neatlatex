@@ -8,7 +8,6 @@ import bibtexparser
 
 
 def clear_bib(bibf, int_dir, poplist, verbose):
-
   if verbose:
     print 'Cleaning the bibtex file', bibf, 'from fields like',
     for f in poplist:
@@ -28,7 +27,6 @@ def clear_bib(bibf, int_dir, poplist, verbose):
   
 
 def clear_wb(out_dir, int_dir, all_exts):
-    
   flist = sh.os.listdir('.')
   if len(flist) == 0 or len(all_exts) == 0:
     return
@@ -48,30 +46,23 @@ def clear_wb(out_dir, int_dir, all_exts):
       
 
 def makepdf(pname, verbose):
-
   if verbose:
     proc = sp.Popen('latex '+pname, shell=True, stderr=sp.STDOUT)
     proc.wait()
-    
     proc = sp.Popen('bibtex '+pname, shell=True, stderr=sp.STDOUT)
     proc.wait()
-    
     proc = sp.Popen('latex '+pname, shell=True, stderr=sp.STDOUT)
     proc.wait()
-    
     proc = sp.Popen('pdflatex '+pname, shell=True, stderr=sp.STDOUT)
     proc.wait()
 
   else:
     proc = sp.Popen(['latex', pname], stdout=sp.PIPE)
     proc.communicate()
-
     proc = sp.Popen(['bibtex', pname], stdout=sp.PIPE)
     proc.communicate()
-
     proc = sp.Popen(['latex', pname], stdout=sp.PIPE)
     proc.communicate()
-
     proc = sp.Popen(['pdflatex', pname], stdout=sp.PIPE)
     proc.communicate()
     
@@ -173,8 +164,11 @@ def main():
         break
       else:
         break
+      
   else:
     print 'Done. Find the output file (.pdf) at', out_dir
 
+
+    
 if __name__ == '__main__':
   main()
