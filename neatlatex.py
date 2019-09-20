@@ -140,10 +140,10 @@ def main():
     while True:
       seepdf = False
       wannasee = raw_input('Do you want to see the output pdf file or what? (Yes/no): ')
-      if wannasee == '':
-        print 'Well here silence is consent!'
+      if wannasee == '' or wannasee == None:
+        print 'Well.. here silence is consent!'
         seepdf = True
-      if wannasee in ['Yes', 'yes', 'y', 'Y']:
+      elif wannasee in ['Yes', 'yes', 'y', 'Y']:
         print '\nOoh, look what you made me do\nLook what you made me do\nLook what you just made me do\nLook what you just made me do..'
         seepdf = True
       elif wannasee == 'YES':
