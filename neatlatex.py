@@ -13,18 +13,34 @@ def clear_bib(bibf, int_dir, poplist, verbose):
     for f in poplist:
       print f,
     print '.'
-  sh.copyfile(bibf, int_dir+'/'+bibf+'.bak')
-  
-  with open(bibf, 'r') as bf:
-    bib_db = bibtexparser.load(bf)
+
+  try:
+    sh.copyfile(bibf, int_dir+'/'+bibf+'.bak')
+  except Exception as e:
+    print '[Warning] Could not create a backup of', bibf
+
+  try:
+    with open(bibf, 'r') as bf:
+      bib_db = bibtexparser.load(bf)
+  except Exception as e:
+    print 'Error occurred while reading', bibf, '!\n', e
+    return -1
+
+  if bib_db.comments:
+    bib_db.comments = []
 
   for e in bib_db.entries:
     for f in poplist:
       e.pop(f, None)
-  
-  with open(bibf,'w') as bf:
-    bibtexparser.dump(bib_db, bf)
-  
+
+  try:
+    with open(bibf,'w') as bf:
+      bibtexparser.dump(bib_db, bf)
+  except Exception as e:
+    print 'Error occurred while writing', bibf, '!\n'
+    return -1
+
+  print 'Bibliography file', bibf,' cleaned up.'
 
 def clear_wb(out_dir, int_dir, all_exts):
   flist = sh.os.listdir('.')
@@ -42,60 +58,83 @@ def clear_wb(out_dir, int_dir, all_exts):
   for f in flist:
     for ext in all_exts:
       if f.endswith(ext):
-        sh.os.remove(f)
-      
+        try:
+          sh.os.remove(f)
+        except Exception as e:
+          print e
+
+  print 'Working directory cleaned up.'
+
 
 def makepdf(pname, verbose):
   if verbose:
-    proc = sp.Popen('latex '+pname, shell=True, stderr=sp.STDOUT)
-    proc.wait()
-    proc = sp.Popen('bibtex '+pname, shell=True, stderr=sp.STDOUT)
-    proc.wait()
-    proc = sp.Popen('latex '+pname, shell=True, stderr=sp.STDOUT)
-    proc.wait()
-    proc = sp.Popen('pdflatex '+pname, shell=True, stderr=sp.STDOUT)
-    proc.wait()
+    try:
+      proc = sp.Popen('latex '+pname, shell=True, stderr=sp.STDOUT)
+      proc.wait()
+      proc = sp.Popen('bibtex '+pname, shell=True, stderr=sp.STDOUT)
+      proc.wait()
+      proc = sp.Popen('latex '+pname, shell=True, stderr=sp.STDOUT)
+      proc.wait()
+      proc = sp.Popen('pdflatex '+pname, shell=True, stderr=sp.STDOUT)
+      proc.wait()
+    except Exception as e:
+      print e
+      return -1
 
   else:
-    proc = sp.Popen(['latex', pname], stdout=sp.PIPE)
-    proc.communicate()
-    proc = sp.Popen(['bibtex', pname], stdout=sp.PIPE)
-    proc.communicate()
-    proc = sp.Popen(['latex', pname], stdout=sp.PIPE)
-    proc.communicate()
-    proc = sp.Popen(['pdflatex', pname], stdout=sp.PIPE)
-    proc.communicate()
-    
+    try:
+      proc = sp.Popen(['latex', pname], stdout=sp.PIPE)
+      proc.communicate()
+      proc = sp.Popen(['bibtex', pname], stdout=sp.PIPE)
+      proc.communicate()
+      proc = sp.Popen(['latex', pname], stdout=sp.PIPE)
+      proc.communicate()
+      proc = sp.Popen(['pdflatex', pname], stdout=sp.PIPE)
+      proc.communicate()
+    except Exception as e:
+      print e
+      return -1
+      
 
 def tidyup(out_dir, output_exts, int_dir, interm_exts, verbose):
   if verbose:
     print '\nCleaning up the working directory...'
-
-  if verbose:
-    print 'Moving all',
-    for e in output_exts:
-      print e+',',
-    print 'to', out_dir
   
   flist = sh.os.listdir('.')
+
+  mov_fail = True  
   for oext in output_exts:
     for f in flist:
       if f.endswith(oext):
-        sh.move(f, out_dir+'/'+ntpath.basename(f))
-
-  if verbose:
-    print 'Moving all',
-    for e in interm_exts:
+        try:
+          sh.move(f, out_dir+'/'+ntpath.basename(f))
+          mov_fail = False
+        except Exception as e:
+          print 'Error occurred while moving output files to', out_dir, '\n', e
+  if verbose and not mov_fail:
+    print 'All',
+    for e in output_exts:
       print e+',',
-    print 'to', int_dir
-          
+    print 'file moved to', out_dir          
+
+  mov_fail = True 
   flist = sh.os.listdir('.')
   for iext in interm_exts:
     for f in flist:
       if f.endswith(iext):
-        sh.move(f, int_dir+'/'+ntpath.basename(f))
+        try:
+          sh.move(f, int_dir+'/'+ntpath.basename(f))
+          mov_fail = False
+        except Exception as e:
+          print 'Error occurred while moving intermediate files to', int_dir, '\n', e
+          
+  if verbose and not mov_fail:
+    print 'All',
+    for e in interm_exts:
+      print e+',',
+    print 'file moved to', int_dir
 
-        
+
 
 def main():
   ap = argp.ArgumentParser(description = 'Neatly compiles or cleans LaTex projects.')
@@ -111,7 +150,7 @@ def main():
   int_dir = './auxlog'
   output_exts = ['.pdf']  
   interm_exts = ['.aux', '.dvi', '.log', '.out', '.xcp', '.bbl', '.blg']
-  bibexclude = ['abstract', 'keywords', 'file', 'comments']
+  bibexclude = ['abstract', 'keywords', 'file', 'comment']
   all_exts = output_exts + interm_exts
 
   if args.clean:
@@ -128,12 +167,18 @@ def main():
   else:
     bibfile = None
 
+  res = 0
+  
   if bibfile:
-    clear_bib(bibfile, int_dir, bibexclude, verbose)
-    return
-
+    res = clear_bib(bibfile, int_dir, bibexclude, verbose)
+  if res == -1:
+    return res
+    
   pname = args.p
-  makepdf(pname, verbose)
+  res = makepdf(pname, verbose)
+  if res == -1:
+    return res
+
   tidyup(out_dir, output_exts, int_dir, interm_exts, verbose)
 
   if verbose:
@@ -166,7 +211,10 @@ def main():
         break
       
   else:
-    print 'Done. Find the output file (.pdf) at', out_dir
+    print 'Done! Find',
+    for e in output_exts:
+      print e+',',
+    print 'file(s) in', out_dir, 'directory.'
 
 
     
