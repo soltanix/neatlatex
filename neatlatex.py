@@ -69,11 +69,9 @@ def clear_wb(out_dir, int_dir, all_exts):
 def makepdf(pname, verbose):
   if verbose:
     try:
-      proc = sp.Popen('latex '+pname, shell=True, stderr=sp.STDOUT)
+      proc = sp.Popen('pdflatex '+pname, shell=True, stderr=sp.STDOUT)
       proc.wait()
       proc = sp.Popen('bibtex '+pname, shell=True, stderr=sp.STDOUT)
-      proc.wait()
-      proc = sp.Popen('latex '+pname, shell=True, stderr=sp.STDOUT)
       proc.wait()
       proc = sp.Popen('pdflatex '+pname, shell=True, stderr=sp.STDOUT)
       proc.wait()
@@ -83,14 +81,13 @@ def makepdf(pname, verbose):
 
   else:
     try:
-      proc = sp.Popen(['latex', pname], stdout=sp.PIPE)
+      proc = sp.Popen(['pdflatex', pname], stdout=sp.PIPE)
       proc.communicate()
       proc = sp.Popen(['bibtex', pname], stdout=sp.PIPE)
       proc.communicate()
-      proc = sp.Popen(['latex', pname], stdout=sp.PIPE)
-      proc.communicate()
       proc = sp.Popen(['pdflatex', pname], stdout=sp.PIPE)
       proc.communicate()
+      
     except Exception as e:
       print e
       return -1
