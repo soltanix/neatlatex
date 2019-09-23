@@ -75,6 +75,9 @@ def makepdf(pname, verbose):
       proc.wait()
       proc = sp.Popen('pdflatex '+pname, shell=True, stderr=sp.STDOUT)
       proc.wait()
+      proc = sp.Popen('pdflatex '+pname, shell=True, stderr=sp.STDOUT)
+      proc.wait()
+
     except Exception as e:
       print e
       return -1
@@ -84,6 +87,8 @@ def makepdf(pname, verbose):
       proc = sp.Popen(['pdflatex', pname], stdout=sp.PIPE)
       proc.communicate()
       proc = sp.Popen(['bibtex', pname], stdout=sp.PIPE)
+      proc.communicate()
+      proc = sp.Popen(['pdflatex', pname], stdout=sp.PIPE)
       proc.communicate()
       proc = sp.Popen(['pdflatex', pname], stdout=sp.PIPE)
       proc.communicate()
