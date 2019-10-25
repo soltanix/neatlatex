@@ -1,0 +1,5 @@
+#!/usr/bin/env bash
+
+source /home/sav/Projects/neatlatex/bin/activate
+python /home/sav/Projects/neatlatex/neatlatex3.py "$@"
+deactivate
