@@ -7,7 +7,7 @@ def nl_uninstall(caller_scr_loc):
   # Uninstallation
   uninst_fail = False
   
-  insfiles = ['reqs.pip', 'bin', 'lib', 'neatlatex3.py', 'include']
+  insfiles = ['reqs.pip', 'bin', 'lib', 'neatlatex3.py', 'include', 'local']
   if os.path.isfile(caller_scr_loc+'/neatlatex'):
     with open(caller_scr_loc+'/neatlatex') as nl_caller:
       udir = os.path.dirname(nl_caller.read().split()[3])
@@ -36,11 +36,15 @@ def nl_uninstall(caller_scr_loc):
         break
       else:
         print('Unrecognized input.')
-        
-
     
   if not os.path.isdir(udir):
     print('Cannot locate installation directory. Exiting...')
+    uninst_fail = True
+    return -1
+
+  flist = os.listdir(udir)
+  if not udir.strip('/').endswith('neatlatex') and 'neatlatex3.py' not in flist:
+    print('The indicated directory does not seem to be a NeatLatex installation.')
     uninst_fail = True
     return -1
 
