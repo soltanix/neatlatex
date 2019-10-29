@@ -123,15 +123,14 @@ def main():
         return -1
 
     print('Installing NeatLatex at', insdir)
-
+      
     if not ins_fail:
       try:
-        subprocess.run(['virtualenv', insdir])
-        subprocess.run([insdir+'/bin/pip', 'install', '-r', 'reqs.pip'])
-      except Exception as e:
-        print(e)
+        import virtualenv
+      except ImportError as imperr:
+        print('Unable to find pipenv:', imperr, '\nMake sure pipenv is installed properly.')
         ins_fail = True
-        return -1    
+        return -1
 
     if not ins_fail:
       try:
@@ -142,15 +141,16 @@ def main():
         print(e)
         ins_fail = True
         return -1
-      
+
     if not ins_fail:
       try:
-        import virtualenv
-      except ImportError as imperr:
-        print('Unable to find pipenv:', imperr, '\nMake sure pipenv is installed properly.')
+        subprocess.run(['virtualenv', insdir])
+        subprocess.run([insdir+'/bin/pip', 'install', '-r', 'reqs.pip'])
+      except Exception as e:
+        print(e)
         ins_fail = True
-        return -1
-
+        return -1          
+      
     if not ins_fail:
       run_scr = '#!/usr/bin/env bash\n'+insdir+'/bin/python '+insdir+'/neatlatex3.py "$@"\nexit\n'
       try:
