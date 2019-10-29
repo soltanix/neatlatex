@@ -139,7 +139,7 @@ def tidyup(out_dir, output_exts, int_dir, interm_exts, verbose):
 
 
 def main():
-  ap = argp.ArgumentParser(description = 'Neatly compiles or cleans LaTex projects.')
+  ap = argp.ArgumentParser(description = 'Neatly compiles or cleans LaTex projects.', prog = 'neatlatex')
   ap.add_argument('p', help = 'Project name')
   ap.add_argument('-c', '--clean', help = 'Clear the project directory from Aux or Log files.', action = 'store_true')
   ap.add_argument('-b', '--bibfile', help = 'Bibtex (.bib) file to cleanup the mess Mendeley leaves behind while syncing.')
