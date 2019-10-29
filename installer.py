@@ -39,10 +39,9 @@ def nl_uninstall(caller_scr_loc):
         
 
     
-  if os.path.isdir(udir):
-      udir = usr_def_dir
-  else:
+  if not os.path.isdir(udir):
     print('Cannot locate installation directory. Exiting...')
+    uninst_fail = True
     return -1
 
   
