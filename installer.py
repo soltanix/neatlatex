@@ -122,16 +122,17 @@ def main():
         ins_fail = True
         return -1
 
-    print('Installing NeatLatex at', insdir)
-      
     if not ins_fail:
       try:
         import virtualenv
       except ImportError as imperr:
-        print('Unable to find pipenv:', imperr, '\nMake sure pipenv is installed properly.')
+        print('Unable to find virtualenv:', imperr, '\nMake sure virtualenv is installed properly.')
         ins_fail = True
         return -1
 
+      
+    print('Installing NeatLatex at', insdir)            
+      
     if not ins_fail:
       try:
         os.makedirs(insdir, exist_ok=True)
