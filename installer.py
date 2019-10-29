@@ -112,12 +112,23 @@ def main():
       if os.path.isdir(insdir):
         if len(os.listdir(insdir)):
           print(insdir, 'is not empty. Cannot install NeatLatex there.')
+          ins_fail = True
           return -1
       else:
         print(insdir, 'is not a directory. Cannot install NeatLatex there.')
+        ins_fail = True
         return -1
 
     print('Installing NeatLatex at', insdir)
+
+    if not ins_fail:
+      try:
+        subprocess.run(['virtualenv', insdir])
+        subprocess.run([insdir+'/bin/pip', 'install', '-r', 'reqs.pip'])
+      except Exception as e:
+        print(e)
+        ins_fail = True
+        return -1    
 
     if not ins_fail:
       try:
@@ -128,25 +139,12 @@ def main():
         print(e)
         ins_fail = True
         return -1
-      except PermissionError:
-        print('You need root permissions to do this')
-        ins_fail = True
-        return -1
-
+      
     if not ins_fail:
       try:
         import virtualenv
       except ImportError as imperr:
         print('Unable to find pipenv:', imperr, '\nMake sure pipenv is installed properly.')
-        ins_fail = True
-        return -1
-
-    if not ins_fail:
-      try:
-        subprocess.run(['virtualenv', insdir])
-        subprocess.run([insdir+'/bin/pip', 'install', '-r', 'reqs.pip'])
-      except Exception as e:
-        print(e)
         ins_fail = True
         return -1
 
