@@ -191,7 +191,7 @@ def main():
         print 'Well.. here silence is consent!'
         seepdf = True
       elif wannasee in ['Yes', 'yes', 'y', 'Y']:
-        print '\nOoh, look what you made me do\nLook what you made me do\nLook what you just made me do\nLook what you just made me do..'
+        print '\nHere is your glorious work.'
         seepdf = True
       elif wannasee == 'YES':
         print '\nAlright man.. Calm down! Here\'s your damn paper.. Have a blast!'
