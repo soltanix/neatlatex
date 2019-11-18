@@ -22,7 +22,7 @@ def clear_bib(bibf, int_dir, poplist, verbose):
   try:
     with open(bibf, 'r') as bf:
       bib_db = bibtexparser.load(bf)
- except Exception as e:
+  except Exception as e:
     print 'Error occurred while reading', bibf, '!\n', e
     return -1
 
