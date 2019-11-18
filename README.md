@@ -8,7 +8,7 @@ Neatly compiles PDF of a given latex project (the main document) and then moves 
 
 `-v` : Verbosity.
 
-## Installation
+## Install
 You need super user privileges to install NeatLatex.
 
 run `installer.py` with option `-i` to and indicate the directory where you want NeatLatex to be installed.
@@ -17,7 +17,7 @@ Example:
 
 `sudo ./installer.py -i /opt/neatlatex`
 
-## Ununstallation
+## Uninstall
 run `installer.py` with option `-u`. The script will look for `neatlatex` caller script at `/usr/local/bin/` and sort out the rest from there.
 
 `sudo ./installer.py -u` 
