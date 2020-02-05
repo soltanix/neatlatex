@@ -11,7 +11,7 @@ Neatly compiles PDF of a given latex project (the main document) and then moves 
 ## Install
 You need super user privileges to install NeatLatex.
 
-run `installer.py` with option `-i` to and indicate the directory where you want NeatLatex to be installed.
+run `installer.py` with option `-i` and indicate the directory where you want NeatLatex to be installed.
 
 Example:
 

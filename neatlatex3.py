@@ -188,7 +188,7 @@ def main():
       seepdf = False
       wannasee = input('Do you want to see the output pdf file or what? (Yes/no): ')
       if wannasee == '' or wannasee == None:
-        print('Well.. here silence is consent!')
+        print('Well.. here silence is Yes!')
         seepdf = True
       elif wannasee in ['Yes', 'yes', 'y', 'Y']:
         print('\nHere is your gloriuos work.')
