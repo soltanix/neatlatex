@@ -176,7 +176,7 @@ def main():
   if res == -1:
     return res
     
-  pname = args.p
+  pname = args.p.strip('.tex')
   res = makepdf(pname, verbose)
   if res == -1:
     return res
