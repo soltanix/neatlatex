@@ -7,7 +7,7 @@ import ntpath
 import bibtexparser
 
 
-def clear_bib(bibf, int_dir, poplist, verbose):
+def clear_bib(bibf, int_dir, poplist, verbose, strsubList):
   if verbose:
     print('Cleaning the bibtex file', bibf, 'from fields like', end = ' ')
     for f in poplist:
@@ -32,6 +32,14 @@ def clear_bib(bibf, int_dir, poplist, verbose):
   for e in bib_db.entries:
     for f in poplist:
       e.pop(f, None)
+
+
+  if len(strsubList) > 0:
+    for e in bib_db.entries:
+      if 'url' in e.keys():
+        for s in strsubList:
+          e['url'] = e['url'].replace(s[0],s[1])
+
 
   try:
     with open(bibf,'w') as bf:
@@ -153,6 +161,7 @@ def main():
   output_exts = ['.pdf']  
   interm_exts = ['.aux', '.dvi', '.log', '.out', '.xcp', '.bbl', '.blg']
   bibexclude = ['abstract', 'keywords', 'file', 'comment']
+  strSubList = [('{~}','~'), ('{\&}','&'), ('{\_}','_'), ('{\%}','%'), (' ', ', ')]
   all_exts = output_exts + interm_exts
 
   if args.clean:
@@ -172,7 +181,7 @@ def main():
   res = 0
   
   if bibfile:
-    res = clear_bib(bibfile, int_dir, bibexclude, verbose)
+    res = clear_bib(bibfile, int_dir, bibexclude, verbose, strSubList)
   if res == -1:
     return res
     
