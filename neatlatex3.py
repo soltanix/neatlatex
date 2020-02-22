@@ -161,7 +161,7 @@ def main():
   output_exts = ['.pdf']  
   interm_exts = ['.aux', '.dvi', '.log', '.out', '.xcp', '.bbl', '.blg']
   bibexclude = ['abstract', 'keywords', 'file', 'comment']
-  strSubList = [('{~}','~'), ('{\&}','&'), ('{\_}','_'), ('{\%}','%'), (' ', ', ')]
+  strSubList = [('{~}','~'), ('{\&}','&'), ('{\_}','_'), ('{\%}','%'), (' ', ', '), ('%20',' '), ('%5F', '_'), ('%7E', '~'), ('%3D', '='), ('%2F', '/'), ('%2B', '+'), ('%3B', ';')]
   all_exts = output_exts + interm_exts
 
   if args.clean:
