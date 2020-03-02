@@ -197,7 +197,7 @@ def main():
       seepdf = False
       wannasee = input('Do you want to see the output pdf file or what? (Yes/no): ')
       if wannasee == '' or wannasee == None:
-        print('Well.. here silence is Yes!')
+        print('No answer!.. OK. I\'m gonna show it just in case.')
         seepdf = True
       elif wannasee in ['Yes', 'yes', 'y', 'Y']:
         print('\nHere is your gloriuos work.')
@@ -208,9 +208,9 @@ def main():
       elif wannasee in ['No', 'no', 'N', 'n']:
         print('\nSure.. you made me do all that and you don\'t even wanna see it.. No problem! It\'s fine.. It\'s totally fine..')
       elif wannasee == 'NO':
-        print('\nYou know what! I don\'t wanna see it either! I don\'t even CARE what\'s inside!')
+        print('\nYou know what! I don\'t wanna see it either! I don\'t even CARE what it looks like!')
       elif wannasee.lower() == 'or what':
-        print('\nCome come, I give you I give you.. you veeery funny ah!')
+        print('\nCome come, I clap for you.. you veeery funny ah!')
       else:
         print('\nDid you really think the person who wrote this script made me smart enough to understand what you\'re saying? Yes or No man.. YES or NO!\nDamn it.. every day a smart ass! every damn day!')
         continue
