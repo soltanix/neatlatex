@@ -27,8 +27,7 @@ def clear_bib(bibf, int_dir, poplist, verbose, strsubList):
     return -1
 
   if bib_db.comments:
-    print('',bib_db.comments[0])
-    if bib_db.comments[0] == 'Cleared by NeatLatex':
+    if 'Cleared by NeatLatex' in bib_db.comments[0]:
       print('The bibtex file appears to be cleaned before. Skipping.')
       return
     else:
