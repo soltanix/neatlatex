@@ -27,7 +27,15 @@ def clear_bib(bibf, int_dir, poplist, verbose, strsubList):
     return -1
 
   if bib_db.comments:
-    bib_db.comments = []
+    print('',bib_db.comments[0])
+    if bib_db.comments[0] == 'Cleared by NeatLatex':
+      print('The bibtex file appears to be cleaned before. Skipping.')
+      return
+    else:
+      bib_db.comments = ['Cleared by NeatLatex']
+  else:
+    print('Comments section not available.')
+
 
   for e in bib_db.entries:
     for f in poplist:
@@ -48,7 +56,7 @@ def clear_bib(bibf, int_dir, poplist, verbose, strsubList):
     print('Error occurred while writing', bibf, '!\n')
     return -1
 
-  print('Bibliography file', bibf,' cleaned up.')
+  print('Bibliography file', bibf,'cleaned up.')
 
 def clear_wb(out_dir, int_dir, all_exts):
   flist = sh.os.listdir('.')
@@ -161,7 +169,9 @@ def main():
   output_exts = ['.pdf']  
   interm_exts = ['.aux', '.dvi', '.log', '.out', '.xcp', '.bbl', '.blg']
   bibexclude = ['abstract', 'keywords', 'file', 'comment']
-  strSubList = [('{~}','~'), ('{\&}','&'), ('{\_}','_'), ('{\%}','%'), (' ', ', '), ('%20',' '), ('%5F', '_'), ('%7E', '~'), ('%3D', '='), ('%2F', '/'), ('%2B', '+'), ('%3B', ';')]
+  strSubList = [('{~}','~'), ('{\&}','&'), ('{\_}','_'), ('{\%}','%'),
+                (' ', ', '), ('%20',' '), ('%5F', '_'), ('%7E', '~'),
+                ('%3D', '='), ('%2F', '/'), ('%2B', '+'), ('%3B', ';')]
   all_exts = output_exts + interm_exts
 
   if args.clean:
