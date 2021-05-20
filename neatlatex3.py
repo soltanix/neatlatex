@@ -166,9 +166,8 @@ def main():
   interm_exts = ['.aux', '.dvi', '.log', '.out', '.xcp', '.bbl', '.blg']
   bibexclude = ['abstract', 'keywords', 'file', 'comment', 'url']
   strSubList = [('{~}','~'), ('{\&}','&'), ('{\_}','_'), ('{\%}','%'),
-                (' ', ', '), ('%20',' '), ('%5F', '_'), ('%7E', '~'),
-                ('%3D', '='), ('%2F', '/'), ('%2B', '+'),
-                ('%3B', ';')]
+                ('%20',' '), ('%5F', '_'), ('%7E', '~'),('%3D', '='),
+                ('%2F', '/'), ('%2B', '+'),('%3B', ';')]
   all_exts = output_exts + interm_exts
 
   if args.proj:
