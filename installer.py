@@ -73,8 +73,7 @@ def nl_uninstall(caller_scr_loc, is_rb, insdir_path = None):
     return -1
 
   flist = os.listdir(udir)
-  if not ('neatlatex3.py' in flist and
-          udir.rstrip('/').endswith('neatlatex')):
+  if not ('neatlatex3.py' in flist and 'env' in flist):
     print('Cannot identify NeatLatex installation at {}'.format(udir))
     uninst_fail = True
     return -1
@@ -162,7 +161,8 @@ def main():
           ins_fail = True
           return -1
       else:
-        print('%s is not a directory. Cannot install NeatLatex there.' %insdir)
+        print('{} is not a directory. Cannot install there.'
+              .format(insdir))
         ins_fail = True
         return -1
 
@@ -170,13 +170,16 @@ def main():
       try:
         import virtualenv
       except ImportError as imperr:
-        print('Unable to find virtualenv: %s\nMake sure virtualenv is installed properly using pip3.' %imperr)
+        print('Unable to import virtualenv.')
+        print(imperr)
         ins_fail = True
         return -1
 
-    if not (insdir.strip('/').endswith('neatlatex') or insdir.strip('/').endswith('NeatLatex')):
+    if not (insdir.strip('/').endswith('neatlatex') or
+            insdir.strip('/').endswith('NeatLatex')):
       print('[Warning] Your installation directory name is not neatlatex or NeatLatex.')
-      sure = input('Are you sure you want to continue installing neatlatex to %s? (yes/No) ' %insdir)
+      sure = input('Are you sure you want to install in {}? (yes/No) '
+                   .format(insdir))
       if not sure in ['Y', 'y', 'Yes', 'yes']:
         return -1
       
@@ -196,9 +199,10 @@ def main():
     if not ins_fail:
       try:
         os.chdir(insdir)
-        subprocess.run(['python3', '-m', 'virtualenv', 'env'])
+        subprocess.run(['virtualenv', '--python=python3', 'env'])
         # subprocess.run(['./env/bin/activate'])
-        subprocess.run(['./env/bin/pip', 'install', '-r', 'reqs.pip'])
+        subprocess.run(['./env/bin/pip3',
+                        'install', '-r', 'reqs.pip'])
         # subprocess.run(['./env/bin/deactivate'])
       except Exception as e:
         print(e)
