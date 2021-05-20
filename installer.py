@@ -198,12 +198,14 @@ def main():
 
     if not ins_fail:
       try:
+        pwd = os.getcwd()
         os.chdir(insdir)
         subprocess.run(['virtualenv', '--python=python3', 'env'])
         # subprocess.run(['./env/bin/activate'])
         subprocess.run(['./env/bin/pip3',
                         'install', '-r', 'reqs.pip'])
         # subprocess.run(['./env/bin/deactivate'])
+        os.chdir(pwd)
       except Exception as e:
         print(e)
         ins_fail = True

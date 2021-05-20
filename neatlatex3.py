@@ -14,7 +14,7 @@ def clear_bib(bibf, int_dir, poplist, verbose, strsubList):
           .format(bibf, ', '.join(poplist)))
     
   try:
-    sh.copyfile(bibf, int_dir+'/'+bibf+'.bak')
+    sh.copyfile(bibf, Path(int_dir, bibf.as_posix()+'.bak'))
   except Exception as e:
     print('[Warning] Could not create a backup of {}:\n{}'
           .format(bibf, e))
@@ -117,8 +117,7 @@ def makepdf(pname, verbose):
 def tidyup(out_dir, output_exts, int_dir, interm_exts, verbose):
   if verbose:
     print('\nCleaning up the working directory...')
-  flist = out_dir.parent.iterdir()
-
+  flist = [f for f in out_dir.parent.iterdir()]
   mov_fail = False
   for f in flist:
     if f.suffix in output_exts:
@@ -206,7 +205,7 @@ def main():
   res = makepdf(pname, verbose)
   if res == -1:
     return res
-
+  
   tidyup(out_dir, output_exts, int_dir, interm_exts, verbose)
 
   # Passive aggressive helper
