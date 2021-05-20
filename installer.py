@@ -1,56 +1,81 @@
 #!/usr/bin/env python3
 
-import argparse, os, shutil, subprocess, sys
-# from pathlib import Path
+import argparse
+import os, sys
+import shutil
+import subprocess
+from pathlib import Path
+import pdb
+
+def findInstDir(caller_scr_loc):
+  """Find where the script is calling neatlatex from"""
+  # I know it's dirty but I'm too lazy to clean it.  
+  if not os.path.isfile(caller_scr_loc+'/neatlatex'):
+    print('Error: The caller script could not be located at {}'
+          .format(caller_scr_loc))
+    return None
+  with open(caller_scr_loc+'/neatlatex') as nl_caller:
+    call_line = None
+    for l in nl_caller.readlines():
+      if l.startswith('python3'):
+        call_line = l
+        break
+  if call_line:
+    return os.path.dirname(call_line.split()[1])
+  else:
+    print('Caller script at {} is malformed.'
+          .format(caller_scr_loc+'/neatlatex'))
+    return None
+
+
+
 
 def nl_uninstall(caller_scr_loc, is_rb, insdir_path = None):
   # Uninstallation
   if is_rb:
-    print('Something went wrong during the installation. Rolling back.')
+    print('Something went wrong while installation. Rolling back.')
   print('Uninstalling NeatLatex...')
-  uninst_fail = False
-  
-  insfiles = ['reqs.pip', 'bin', 'lib', 'neatlatex3.py', 'include', 'local']
+  uninst_fail = False  
+  insfiles = ['reqs.pip', 'neatlatex3.py', 'env']
+
   if insdir_path:
     udir = insdir_path
-  elif insdir_path == None and os.path.isfile(caller_scr_loc+'/neatlatex'):
-    with open(caller_scr_loc+'/neatlatex') as nl_caller:
-      udir = os.path.dirname(nl_caller.read().split()[3])
-      #I know it's dirty but I'm too lazy to clean it.
   else:
-    print('Error: The caller script could not be located at %s/neatlatex' %caller_scr_loc)
+    udir = findInstDir(caller_scr_loc)
 
+  if udir == None:
     while True:
-      scr_loc_known = input('Do you know where the caller script is? (Yes/no): ')
-      if scr_loc_known.lower() == 'yes' or scr_loc_known.lower() == 'y' or scr_loc_known.lower() == '' or scr_loc_known.lower() == None :
+      scr_loc_known = input(
+        'Do you know the location of the caller script? (Yes/no): ')
+      if scr_loc_known.lower() in ['yes', 'y', '', None]:
         scr_loc = input('Input the location of the caller script: ')
-        with open(scr_loc) as nl_caller:
-          udir = os.path.dirname(nl_caller.read().split()[3])
+        if scr_loc.endswith('/neatlatex'):
+          scr_loc = scr_loc[:-10]
+        udir = findInstDir(scr_loc)
         break
-      elif scr_loc_known.lower() == 'no' or scr_loc_known.lower() == 'n':
+      elif scr_loc_known.lower() in ['no', 'n']:
         while True:
-          dir_loc_known = input('Do you know where the installation directory is? (Yes/no): ')
-          if dir_loc_known.lower() == 'yes' or dir_loc_known.lower() == 'y' or dir_loc_known.lower() == '' or dir_loc_known.lower() == None :
+          dir_loc_known = input(
+            'Do you know path to installation directory? (Yes/no): ')
+          if dir_loc_known.lower() in ['yes', 'y', '', None]:
             udir = input('Input the installation directory: ')
             break
-          elif dir_loc_known.lower() == 'no' or dir_loc_known.lower() == 'n':
-            print('Uninstallation cannot continue without a script or directory location.')
-            udir = ''
+          elif dir_loc_known.lower() in ['no', 'n']:
             break
           else:
             print('Unrecognized input.')
         break
       else:
         print('Unrecognized input.')
-    
-  if not os.path.isdir(udir):
+  if udir == None or not os.path.isdir(udir):
     print('Cannot locate installation directory. Exiting...')
     uninst_fail = True
     return -1
 
   flist = os.listdir(udir)
-  if not (udir.strip('/').endswith('neatlatex') or udir.strip('/').endswith('NeatLatex')) and 'neatlatex3.py' not in flist:
-    print('The indicated directory does not seem to be a NeatLatex installation.')
+  if not ('neatlatex3.py' in flist and
+          udir.rstrip('/').endswith('neatlatex')):
+    print('Cannot identify NeatLatex installation at {}'.format(udir))
     uninst_fail = True
     return -1
 
@@ -100,16 +125,19 @@ def nl_uninstall(caller_scr_loc, is_rb, insdir_path = None):
     print('Some installation files could not be located or the uninstallation was not completed successfully.\nSome files/directories might be remaining. Check possible installation directories and /usr/local/bin')
     return -1
 
-def main():
 
-  ap = argparse.ArgumentParser(description = 'Installs NeatLatex script on a given directory.')
+def main():
+  ap = argparse.ArgumentParser(description = 'Installs NeatLatex.')
   argrp = ap.add_mutually_exclusive_group(required=True)
-  argrp.add_argument('-i', '--install', action = 'store', help = 'Installs NeatLatex into given directory')
-  argrp.add_argument('-u', '--uninstall', action = 'store_true', help = 'Uninstalls NeatLatex from /usr/bin/')
+  argrp.add_argument('-i', '--install', action = 'store',
+                     help = 'Installation directory')
+  argrp.add_argument('-u', '--uninstall', action = 'store_true',
+                     help = 'Uninstalls NeatLatex')
   args = ap.parse_args()
 
   if (sys.version_info < (3, 0)):
-    print('This script has been tested with Python 3\nYou\'re using Python version %s' %sys.version)
+    print('NeatLatex requires Python 3.')
+    return
   
   caller_scr_loc = '/usr/local/bin'
   rollback_success = 0
@@ -129,7 +157,8 @@ def main():
     if os.path.exists(insdir):
       if os.path.isdir(insdir):
         if len(os.listdir(insdir)):
-          print('%s is not empty. Cannot install NeatLatex there.\nIf you want to install NeatLatex inside the indicated directory, add "/neatlatex" to the end of your installation path.' %insdir)
+          print('{} is not empty.'.format(insdir))
+          print('Cannot install NeatLatex there.\nIf you want to install NeatLatex inside the indicated directory, add "/neatlatex" to the end of your installation path.')
           ins_fail = True
           return -1
       else:
@@ -166,8 +195,11 @@ def main():
 
     if not ins_fail:
       try:
-        subprocess.run(['virtualenv', insdir])
-        subprocess.run([insdir+'/bin/pip', 'install', '-r', 'reqs.pip'])
+        os.chdir(insdir)
+        subprocess.run(['python3', '-m', 'virtualenv', 'env'])
+        # subprocess.run(['./env/bin/activate'])
+        subprocess.run(['./env/bin/pip', 'install', '-r', 'reqs.pip'])
+        # subprocess.run(['./env/bin/deactivate'])
       except Exception as e:
         print(e)
         ins_fail = True
@@ -175,7 +207,11 @@ def main():
         return -1          
       
     if not ins_fail:
-      run_scr = '#!/usr/bin/env bash\n'+insdir+'/bin/python '+insdir+'/neatlatex3.py "$@"\nexit\n'
+      run_scr_list = ['#!/usr/bin/env bash\n',
+                      'source '+insdir+'/env/bin/activate',
+                      'python3 '+insdir+'/neatlatex3.py "$@"',
+                      'deactivate', 'exit\n']
+      run_scr = '\n'.join(run_scr_list)
       try:
         with open(insdir+'/neatlatex', 'w') as runfile:
           runfile.write(run_scr)
