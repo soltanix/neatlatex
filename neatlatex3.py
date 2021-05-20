@@ -3,43 +3,45 @@
 import argparse as argp
 import shutil as sh
 import subprocess as sp
-import ntpath
 import bibtexparser
+from pathlib import Path
+import pdb
 
 
 def clear_bib(bibf, int_dir, poplist, verbose, strsubList):
   if verbose:
-    print('Cleaning the bibtex file', bibf, 'from fields like', end = ' ')
-    for f in poplist:
-      print(f, end = ' ')
-    print('.')
-
+    print('Removing following fields from {}:\n{}'
+          .format(bibf, ', '.join(poplist)))
+    
   try:
     sh.copyfile(bibf, int_dir+'/'+bibf+'.bak')
   except Exception as e:
-    print('[Warning] Could not create a backup of', bibf)
+    print('[Warning] Could not create a backup of {}:\n{}'
+          .format(bibf, e))
 
   try:
     with open(bibf, 'r') as bf:
       bib_db = bibtexparser.load(bf)
   except Exception as e:
-    print ('Error occurred while reading', bibf, '!\n', e)
+    print ('[Error] could not read {}:\n{}'.format(bibf, e))
     return -1
 
-  if bib_db.comments:
+  if hasattr(bib_db, 'comments'):
     if 'Cleared by NeatLatex' in bib_db.comments[0]:
       print('The bibtex file appears to be cleaned before. Skipping.')
       return
     else:
       bib_db.comments = ['Cleared by NeatLatex']
   else:
-    print('Comments section not available.')
-
+    print('[Info] Comments section not available in bibtex. Adding.')
+    bib_db.comments = ['Cleared by NeatLatex']
 
   for e in bib_db.entries:
     for f in poplist:
-      e.pop(f, None)
-
+      try:
+        bib_db.entries.pop(f)
+      except:
+        continue
 
   if len(strsubList) > 0:
     for e in bib_db.entries:
@@ -47,15 +49,14 @@ def clear_bib(bibf, int_dir, poplist, verbose, strsubList):
         for s in strsubList:
           e['url'] = e['url'].replace(s[0],s[1])
 
-
   try:
     with open(bibf,'w') as bf:
       bibtexparser.dump(bib_db, bf)
   except Exception as e:
-    print('Error occurred while writing', bibf, '!\n')
+    print('Error occurred while writing {}!\n'.format(bibf))
     return -1
 
-  print('Bibliography file', bibf,'cleaned up.')
+  print('Bibliography file {} cleaned up.'.format(bibf))
 
 def clear_wb(out_dir, int_dir, all_exts):
   flist = sh.os.listdir('.')
@@ -116,35 +117,34 @@ def makepdf(pname, verbose):
 def tidyup(out_dir, output_exts, int_dir, interm_exts, verbose):
   if verbose:
     print('\nCleaning up the working directory...')
-  
-  flist = sh.os.listdir('.')
+  flist = out_dir.parent.iterdir()
 
-  mov_fail = True  
-  for oext in output_exts:
-    for f in flist:
-      if f.endswith(oext):
-        try:
-          sh.move(f, out_dir+'/'+ntpath.basename(f))
-          mov_fail = False
-        except Exception as e:
-          print('Error occurred while moving output files to', out_dir, '\n', e)
+  mov_fail = False
+  for f in flist:
+    if f.suffix in output_exts:
+      try:
+        sh.move(f, Path(out_dir, f))
+      except Exception as e:
+        print('Error occurred while moving output files to',
+              out_dir, '\n', e)
+        mov_fail = True
+
   if verbose and not mov_fail:
     print ('All', end = ' ')
     for e in output_exts:
       print (e+',', end = ' ')
     print('file(s) moved to', out_dir)
 
-  mov_fail = True 
-  flist = sh.os.listdir('.')
-  for iext in interm_exts:
-    for f in flist:
-      if f.endswith(iext):
-        try:
-          sh.move(f, int_dir+'/'+ntpath.basename(f))
-          mov_fail = False
-        except Exception as e:
-          print('Error occurred while moving intermediate files to', int_dir, '\n', e)
-          
+  mov_fail = False
+  for f in flist:
+    if f.suffix in interm_exts:
+      try:
+        sh.move(f, Path(int_dir, f))
+      except Exception as e:
+        print('Error occurred while moving intermediate files to',
+              int_dir, '\n', e)
+        mov_fail = True
+
   if verbose and not mov_fail:
     print ('All', end = ' ')
     for e in interm_exts:
@@ -152,61 +152,70 @@ def tidyup(out_dir, output_exts, int_dir, interm_exts, verbose):
     print('file(s) moved to', int_dir)
 
 
-
 def main():
   ap = argp.ArgumentParser(description = 'Neatly compiles or cleans LaTex projects.', prog = 'neatlatex')
-  ap.add_argument('p', help = 'Project name')
-  ap.add_argument('-c', '--clean', help = 'Clear the project directory from Aux or Log files.', action = 'store_true')
-  ap.add_argument('-b', '--bibfile', help = 'Bibtex (.bib) file to cleanup the mess Mendeley leaves behind while syncing.')
+  ap.add_argument('-p', '--proj', help = 'Project name to comile')
+  ap.add_argument('-c', '--clear', help = 'Clear the project directory from Aux or Log files.', action = 'store_true')
+  ap.add_argument('-b', '--bibfile', help = 'Bibtex (.bib) file to cleanup from the mess Mendeley leaves behind while syncing libraries')
   ap.add_argument('-v', '--verbose', help = 'Toggles verbosity', action = 'store_true')
   args = ap.parse_args()
 
   verbose = args.verbose
-  
-  out_dir = './output'
-  int_dir = './auxlog'
+
   output_exts = ['.pdf']  
   interm_exts = ['.aux', '.dvi', '.log', '.out', '.xcp', '.bbl', '.blg']
-  bibexclude = ['abstract', 'keywords', 'file', 'comment']
+  bibexclude = ['abstract', 'keywords', 'file', 'comment', 'url']
   strSubList = [('{~}','~'), ('{\&}','&'), ('{\_}','_'), ('{\%}','%'),
                 (' ', ', '), ('%20',' '), ('%5F', '_'), ('%7E', '~'),
-                ('%3D', '='), ('%2F', '/'), ('%2B', '+'), ('%3B', ';')]
+                ('%3D', '='), ('%2F', '/'), ('%2B', '+'),
+                ('%3B', ';')]
   all_exts = output_exts + interm_exts
 
-  if args.clean:
+  if args.proj:
+    proj_dir = Path(args.proj).parent
+  else:
+    proj_dir = Path('.')
+  out_dir = Path(proj_dir, 'output')
+  int_dir = Path(proj_dir, 'auxlog')
+
+  if args.clear:
     clear_wb(out_dir, int_dir, all_exts)
     return
-  
-  if not sh.os.path.exists(out_dir):
-    sh.os.mkdir(out_dir)
-  if not sh.os.path.exists(int_dir):
-    sh.os.mkdir(int_dir)
-  
-  if args.bibfile != None:
-    bibfile = args.bibfile
-  else:
-    bibfile = None
-
-  res = 0
-  
-  if bibfile:
+  elif args.bibfile:
+    bibfile = Path(args.bibfile)
     res = clear_bib(bibfile, int_dir, bibexclude, verbose, strSubList)
-  if res == -1:
-    return res
-    
-  pname = args.p.strip('.tex')
+    return
+  
+  if not args.proj:
+    print('Must indicate main project .tex file to compile.')
+    return
+  if len(args.proj) <= 0:
+    print('Invalid project name.')
+    return
+  if not (Path(args.proj).exists() or
+          Path(args.proj + '.tex').exists()):
+    print('File does not exist.')
+    return
+  
+  if not out_dir.exists():
+    out_dir.mkdir()
+  if not int_dir.exists():
+    int_dir.mkdir()
+
+  pname = args.proj.strip('.tex')
   res = makepdf(pname, verbose)
   if res == -1:
     return res
 
   tidyup(out_dir, output_exts, int_dir, interm_exts, verbose)
 
+  # Passive aggressive helper
   if verbose:
     while True:
       seepdf = False
       wannasee = input('Do you want to see the output pdf file or what? (Yes/no): ')
       if wannasee == '' or wannasee == None:
-        print('No answer!.. OK. I\'m gonna show it just in case.')
+        print('No answer!.. OK. Here it is just in case.')
         seepdf = True
       elif wannasee in ['Yes', 'yes', 'y', 'Y']:
         print('\nHere is your gloriuos work.')
@@ -225,7 +234,8 @@ def main():
         continue
 
       if seepdf:
-        sh.os.popen('xdg-open '+out_dir+'/'+pname+'.pdf')
+        sh.os.popen('xdg-open ' + Path(out_dir, pname + '.pdf')
+                    .as_posix())
         break
       else:
         break
@@ -233,7 +243,7 @@ def main():
   else:
     print ('Done! Find', end = ' ')
     for e in output_exts:
-      print (e+',', end = ' ')
+      print (e + ',', end = ' ')
     print ('file(s) in', out_dir, 'directory.')
 
 
