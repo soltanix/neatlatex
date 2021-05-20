@@ -12,7 +12,8 @@ def clear_bib(bibf, int_dir, poplist, verbose, strsubList):
   if verbose:
     print('Removing following fields from {}:\n{}'
           .format(bibf, ', '.join(poplist)))
-    
+  if not int_dir.is_dir():
+    int_dir.mkdir()
   try:
     sh.copyfile(bibf, Path(int_dir, bibf.as_posix()+'.bak'))
   except Exception as e:
@@ -196,9 +197,9 @@ def main():
     print('File does not exist.')
     return
   
-  if not out_dir.exists():
+  if not out_dir.is_dir():
     out_dir.mkdir()
-  if not int_dir.exists():
+  if not int_dir.is_dir():
     int_dir.mkdir()
 
   pname = args.proj.strip('.tex')
