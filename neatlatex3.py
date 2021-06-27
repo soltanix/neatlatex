@@ -28,7 +28,7 @@ def clear_bib(bibf, int_dir, poplist, verbose, strsubList):
     return -1
 
   if hasattr(bib_db, 'comments'):
-    if 'Cleared by NeatLatex' in bib_db.comments[0]:
+    if 'Cleared by NeatLatex' in bib_db.comments:
       print('The bibtex file appears to be cleaned before. Skipping.')
       return
     else:
@@ -36,11 +36,12 @@ def clear_bib(bibf, int_dir, poplist, verbose, strsubList):
   else:
     print('[Info] Comments section not available in bibtex. Adding.')
     bib_db.comments = ['Cleared by NeatLatex']
-
   for e in bib_db.entries:
     for f in poplist:
       try:
-        bib_db.entries.pop(f)
+        if e['ENTRYTYPE'] == 'misc' and f == 'url':
+          continue
+        e.pop(f)
       except:
         continue
 
