@@ -4,37 +4,37 @@ import argparse as argp
 import shutil as sh
 import subprocess as sp
 import bibtexparser
+import logging
 from pathlib import Path
-import pdb
-
+log = logging.getLogger(__name__)
 
 def clear_bib(bibf, int_dir, poplist, verbose, strsubList):
   if verbose:
-    print('Removing following fields from {}:\n{}'
-          .format(bibf, ', '.join(poplist)))
+    log.info('Removing following fields from {}:\n{}'
+             .format(bibf, ', '.join(poplist)))
   if not int_dir.is_dir():
     int_dir.mkdir()
   try:
-    sh.copyfile(bibf, Path(int_dir, bibf.as_posix()+'.bak'))
+    sh.copyfile(bibf, Path(int_dir, bibf.name + '.bak'))
   except Exception as e:
-    print('[Warning] Could not create a backup of {}:\n{}'
-          .format(bibf, e))
+    log.warning('Could not create a backup of {}:\n{}'
+                .format(bibf, e))
 
   try:
     with open(bibf, 'r') as bf:
       bib_db = bibtexparser.load(bf)
   except Exception as e:
-    print ('[Error] could not read {}:\n{}'.format(bibf, e))
+    log.critical('Could not read {}:\n{}'.format(bibf, e))
     return -1
 
   if hasattr(bib_db, 'comments'):
     if 'Cleared by NeatLatex' in bib_db.comments:
-      print('The bibtex file appears to be cleaned before. Skipping.')
+      log.info('The bibtex file appears to be cleaned before. Skipping.')
       return
     else:
       bib_db.comments = ['Cleared by NeatLatex']
   else:
-    print('[Info] Comments section not available in bibtex. Adding.')
+    log.info('Comments section not available in bibtex. Adding.')
     bib_db.comments = ['Cleared by NeatLatex']
   for e in bib_db.entries:
     for f in poplist:
@@ -55,33 +55,37 @@ def clear_bib(bibf, int_dir, poplist, verbose, strsubList):
     with open(bibf,'w') as bf:
       bibtexparser.dump(bib_db, bf)
   except Exception as e:
-    print('Error occurred while writing {}!\n'.format(bibf))
+    log.info('Error occurred while writing {}!\n'.format(bibf))
     return -1
 
-  print('Bibliography file {} cleaned up.'.format(bibf))
+  log.info('Bibliography file {} cleaned up.'.format(bibf))
 
 def clear_wb(out_dir, int_dir, all_exts):
   flist = sh.os.listdir('.')
   if len(flist) == 0 or len(all_exts) == 0:
     return
-
+  cleaned = True
   dirs = [out_dir, int_dir]
-
   for d in dirs:
     try:
       sh.rmtree(d)
     except Exception as e:
-      print(str(e).replace('Errno 2', 'Warning'))
-    
+      cleaned = False
+      log.error('Could not remove {}\n{}'.format(d, e))
+
   for f in flist:
     for ext in all_exts:
       if f.endswith(ext):
         try:
           sh.os.remove(f)
         except Exception as e:
-          print(e)
+          cleaned = False
+          log.error('Could not remove {}\n{}'.format(f, e))
 
-  print('Working directory cleaned up.')
+  if cleaned:
+    log.info('Working directory cleaned up.')
+  else:
+    log.warning('Some files/directories could not be removed.')
 
 
 def makepdf(pname, verbose):
@@ -97,7 +101,7 @@ def makepdf(pname, verbose):
       proc.wait()
 
     except Exception as e:
-      print(e)
+      log.critical('{}'.format(e))
       return -1
 
   else:
@@ -112,57 +116,73 @@ def makepdf(pname, verbose):
       proc.communicate()
       
     except Exception as e:
-      print(e)
+      log.critical('{}'.format(e))
       return -1
-      
+
 
 def tidyup(out_dir, output_exts, int_dir, interm_exts, verbose):
-  if verbose:
-    print('\nCleaning up the working directory...')
-  flist = [f for f in out_dir.parent.iterdir()]
-  mov_fail = False
-  for f in flist:
+  log.info('Cleaning up the working directory...')
+  fList = [f for f in out_dir.parent.iterdir()]
+  moveFailed = False
+  for f in fList:
     if f.suffix in output_exts:
       try:
         sh.move(f, Path(out_dir, f))
       except Exception as e:
-        print('Error occurred while moving output files to',
-              out_dir, '\n', e)
-        mov_fail = True
+        log.error('Could not move output files to {}\n{}'.format(out_dir, e))
+        moveFailed = True
 
-  if verbose and not mov_fail:
-    print ('All', end = ' ')
-    for e in output_exts:
-      print (e+',', end = ' ')
-    print('file(s) moved to', out_dir)
+  if not moveFailed:
+    log.debug('All {} file(s) moved to {}'
+              .format(','.join(output_exts), out_dir))
 
-  mov_fail = False
-  for f in flist:
+  moveFailed = False
+  for f in fList:
     if f.suffix in interm_exts:
       try:
         sh.move(f, Path(int_dir, f))
       except Exception as e:
-        print('Error occurred while moving intermediate files to',
-              int_dir, '\n', e)
-        mov_fail = True
+        log.error('Could not move intermediate files to {}\n{}'
+                  .format(int_dir, e))
+        moveFailed = True
 
-  if verbose and not mov_fail:
-    print ('All', end = ' ')
-    for e in interm_exts:
-      print (e+',', end = ' ')
-    print('file(s) moved to', int_dir)
+  if not moveFailed:
+    log.debug('All {} file(s) moved to {}'
+              .format(','.join(interm_exts), int_dir))
 
 
 def main():
-  ap = argp.ArgumentParser(description = 'Neatly compiles or cleans LaTex projects.', prog = 'neatlatex')
+  logLevels = {
+    'critical': logging.CRITICAL,
+    'error': logging.ERROR,
+    'warn': logging.WARNING,
+    'warning': logging.WARNING,
+    'info': logging.INFO,
+    'debug': logging.DEBUG
+  }
+
+  ap = argp.ArgumentParser(description = 'Neatly compiles LaTex projects.',
+                           prog = 'neatlatex')
   ap.add_argument('-p', '--proj', help = 'Project name to comile')
-  ap.add_argument('-c', '--clear', help = 'Clear the project directory from Aux or Log files.', action = 'store_true')
-  ap.add_argument('-b', '--bibfile', help = 'Bibtex (.bib) file to cleanup from the mess Mendeley leaves behind while syncing libraries')
-  ap.add_argument('-v', '--verbose', help = 'Toggles verbosity', action = 'store_true')
+  ap.add_argument('-c', '--clear',
+                  help = 'Clear the project directory from Aux or Log files.',
+                  action = 'store_true')
+  ap.add_argument('-l', '--log', help = 'Indicate log level',
+                  choices = logLevels.keys(), default = 'info')
+  ap.add_argument('-b', '--bibfile',
+                  help = 'Bibtex file auto-generated by Mendeley.')
+  ap.add_argument('-v', '--verbose', help = 'Toggles verbosity',
+                  action = 'store_true')
   args = ap.parse_args()
 
-  verbose = args.verbose
+  logLevel = logLevels.get(args.log.lower())
+  if logLevel is None:
+    raise ValueError('Log level must be one of{}'
+                     .format(' | '.join(logLevels.keys())))
+  logging.basicConfig(level = logLevel, format='%(levelname)s: %(message)s')
+  log.debug('Log level: {}'.format(logLevel))  
 
+  verbose = args.verbose
   output_exts = ['.pdf']  
   interm_exts = ['.aux', '.dvi', '.log', '.out', '.xcp', '.bbl', '.blg']
   bibexclude = ['abstract', 'keywords', 'file', 'comment', 'url']
@@ -187,14 +207,14 @@ def main():
     return
   
   if not args.proj:
-    print('Must indicate main project .tex file to compile.')
+    log.critical('Must indicate main project .tex file to compile.')
     return
   if len(args.proj) <= 0:
-    print('Invalid project name.')
+    log.critical('Invalid project name.')
     return
   if not (Path(args.proj).exists() or
           Path(args.proj + '.tex').exists()):
-    print('File does not exist.')
+    log.critical('File does not exist.')
     return
   
   if not out_dir.is_dir():
@@ -241,11 +261,8 @@ def main():
         break
       
   else:
-    print ('Done! Find', end = ' ')
-    for e in output_exts:
-      print (e + ',', end = ' ')
-    print ('file(s) in', out_dir, 'directory.')
-
+    log.info('Done! Find {} files(s) in {} directory.'
+             .format(','.join(output_exts), out_dir))
 
     
 if __name__ == '__main__':
