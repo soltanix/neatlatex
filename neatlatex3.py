@@ -8,35 +8,35 @@ import logging
 from pathlib import Path
 log = logging.getLogger(__name__)
 
-def clear_bib(bibf, int_dir, poplist, verbose, strsubList):
+def clear_bib(bibFile, intermDir, poplist, verbose, strsubList):
   if verbose:
     log.info('Removing following fields from {}:\n{}'
-             .format(bibf, ', '.join(poplist)))
-  if not int_dir.is_dir():
-    int_dir.mkdir()
+             .format(bibFile, ', '.join(poplist)))
+  if not intermDir.is_dir():
+    intermDir.mkdir()
   try:
-    sh.copyfile(bibf, Path(int_dir, bibf.name + '.bak'))
+    sh.copyfile(bibFile, Path(intermDir, bibFile.name + '.bak'))
   except Exception as e:
     log.warning('Could not create a backup of {}:\n{}'
-                .format(bibf, e))
+                .format(bibFile, e))
 
   try:
-    with open(bibf, 'r') as bf:
-      bib_db = bibtexparser.load(bf)
+    with open(bibFile, 'r') as bf:
+      bibDB = bibtexparser.load(bf)
   except Exception as e:
-    log.critical('Could not read {}:\n{}'.format(bibf, e))
+    log.critical('Could not read {}:\n{}'.format(bibFile, e))
     return -1
 
-  if hasattr(bib_db, 'comments'):
-    if 'Cleared by NeatLatex' in bib_db.comments:
+  if hasattr(bibDB, 'comments'):
+    if 'Cleared by NeatLatex' in bibDB.comments:
       log.info('The bibtex file appears to be cleaned before. Skipping.')
       return
     else:
-      bib_db.comments = ['Cleared by NeatLatex']
+      bibDB.comments = ['Cleared by NeatLatex']
   else:
     log.info('Comments section not available in bibtex. Adding.')
-    bib_db.comments = ['Cleared by NeatLatex']
-  for e in bib_db.entries:
+    bibDB.comments = ['Cleared by NeatLatex']
+  for e in bibDB.entries:
     for f in poplist:
       try:
         if e['ENTRYTYPE'] == 'misc' and f == 'url':
@@ -46,26 +46,27 @@ def clear_bib(bibf, int_dir, poplist, verbose, strsubList):
         continue
 
   if len(strsubList) > 0:
-    for e in bib_db.entries:
+    for e in bibDB.entries:
       if 'url' in e.keys():
         for s in strsubList:
           e['url'] = e['url'].replace(s[0],s[1])
 
   try:
-    with open(bibf,'w') as bf:
-      bibtexparser.dump(bib_db, bf)
+    with open(bibFile,'w') as bf:
+      bibtexparser.dump(bibDB, bf)
   except Exception as e:
-    log.info('Error occurred while writing {}!\n'.format(bibf))
+    log.info('Error occurred while writing {}!\n'.format(bibFile))
     return -1
 
-  log.info('Bibliography file {} cleaned up.'.format(bibf))
+  log.info('Bibliography file {} cleaned up.'.format(bibFile))
 
-def clear_wb(out_dir, int_dir, all_exts):
-  flist = sh.os.listdir('.')
-  if len(flist) == 0 or len(all_exts) == 0:
+def clear_wb(outDir, intermDir, allExts):
+  pwdFileList = [f for f in Path().iterdir()]
+  allExtTuples = tuple(e for e in allExts)
+  if len(pwdFileList) == 0 or len(allExts) == 0:
     return
   cleaned = True
-  dirs = [out_dir, int_dir]
+  dirs = [outDir, intermDir]
   for d in dirs:
     try:
       sh.rmtree(d)
@@ -73,14 +74,13 @@ def clear_wb(out_dir, int_dir, all_exts):
       cleaned = False
       log.error('Could not remove {}\n{}'.format(d, e))
 
-  for f in flist:
-    for ext in all_exts:
-      if f.endswith(ext):
-        try:
-          sh.os.remove(f)
-        except Exception as e:
-          cleaned = False
-          log.error('Could not remove {}\n{}'.format(f, e))
+  for f in pwdFileList:
+    if f.name.endswith(allExtTuples):
+      try:
+        sh.os.remove(f)
+      except Exception as e:
+        cleaned = False
+        log.error('Could not remove {}\n{}'.format(f, e))
 
   if cleaned:
     log.info('Working directory cleaned up.')
@@ -120,35 +120,35 @@ def makepdf(pname, verbose):
       return -1
 
 
-def tidyup(out_dir, output_exts, int_dir, interm_exts, verbose):
+def tidyup(outDir, outputExts, intermDir, intermExts, verbose):
   log.info('Cleaning up the working directory...')
-  fList = [f for f in out_dir.parent.iterdir()]
+  fList = [f for f in outDir.parent.iterdir()]
+  outputExtTuples = tuple(e for e in outputExts)
+  intermExtTuples = tuple(e for e in intermExts)
   moveFailed = False
   for f in fList:
-    if f.suffix in output_exts:
+    if f.name.endswith(outputExtTuples):
       try:
-        sh.move(f, Path(out_dir, f))
+        sh.move(f, Path(outDir, f))
       except Exception as e:
-        log.error('Could not move output files to {}\n{}'.format(out_dir, e))
+        log.error('Could not move output files to {}\n{}'.format(outDir, e))
         moveFailed = True
-
   if not moveFailed:
     log.debug('All {} file(s) moved to {}'
-              .format(','.join(output_exts), out_dir))
+              .format(','.join(outputExts), outDir))
 
   moveFailed = False
   for f in fList:
-    if f.suffix in interm_exts:
+    if f.name.endswith(intermExtTuples):
       try:
-        sh.move(f, Path(int_dir, f))
+        sh.move(f, Path(intermDir, f))
       except Exception as e:
         log.error('Could not move intermediate files to {}\n{}'
-                  .format(int_dir, e))
+                  .format(intermDir, e))
         moveFailed = True
-
   if not moveFailed:
     log.debug('All {} file(s) moved to {}'
-              .format(','.join(interm_exts), int_dir))
+              .format(','.join(intermExts), intermDir))
 
 
 def main():
@@ -183,27 +183,28 @@ def main():
   log.debug('Log level: {}'.format(logLevel))  
 
   verbose = args.verbose
-  output_exts = ['.pdf']  
-  interm_exts = ['.aux', '.dvi', '.log', '.out', '.xcp', '.bbl', '.blg']
+  outputExts = ['.pdf']  
+  intermExts = ['.aux', '.dvi', '.log', '.out', '.xcp', '.bbl', '.blg',
+                 '.lof', '.lot', '.run.xml', '.bcf', '.toc']
   bibexclude = ['abstract', 'keywords', 'file', 'comment', 'url']
   strSubList = [('{~}','~'), ('{\&}','&'), ('{\_}','_'), ('{\%}','%'),
                 ('%20',' '), ('%5F', '_'), ('%7E', '~'),('%3D', '='),
                 ('%2F', '/'), ('%2B', '+'),('%3B', ';')]
-  all_exts = output_exts + interm_exts
+  allExts = outputExts + intermExts
 
   if args.proj:
     proj_dir = Path(args.proj).parent
   else:
     proj_dir = Path('.')
-  out_dir = Path(proj_dir, 'output')
-  int_dir = Path(proj_dir, 'auxlog')
+  outDir = Path(proj_dir, 'output')
+  intermDir = Path(proj_dir, 'auxlog')
 
   if args.clear:
-    clear_wb(out_dir, int_dir, all_exts)
+    clear_wb(outDir, intermDir, allExts)
     return
   elif args.bibfile:
-    bibfile = Path(args.bibfile)
-    res = clear_bib(bibfile, int_dir, bibexclude, verbose, strSubList)
+    bibFile = Path(args.bibfile)
+    res = clear_bib(bibFile, intermDir, bibexclude, verbose, strSubList)
     return
   
   if not args.proj:
@@ -217,17 +218,17 @@ def main():
     log.critical('File does not exist.')
     return
   
-  if not out_dir.is_dir():
-    out_dir.mkdir()
-  if not int_dir.is_dir():
-    int_dir.mkdir()
+  if not outDir.is_dir():
+    outDir.mkdir()
+  if not intermDir.is_dir():
+    intermDir.mkdir()
 
   pname = args.proj.strip('.tex')
   res = makepdf(pname, verbose)
   if res == -1:
     return res
   
-  tidyup(out_dir, output_exts, int_dir, interm_exts, verbose)
+  tidyup(outDir, outputExts, intermDir, intermExts, verbose)
 
   # Passive aggressive helper
   if verbose:
@@ -254,7 +255,7 @@ def main():
         continue
 
       if seepdf:
-        sh.os.popen('xdg-open ' + Path(out_dir, pname + '.pdf')
+        sh.os.popen('xdg-open ' + Path(outDir, pname + '.pdf')
                     .as_posix())
         break
       else:
@@ -262,7 +263,7 @@ def main():
       
   else:
     log.info('Done! Find {} files(s) in {} directory.'
-             .format(','.join(output_exts), out_dir))
+             .format(','.join(outputExts), outDir))
 
     
 if __name__ == '__main__':
