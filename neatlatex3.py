@@ -93,13 +93,11 @@ def makepdf(pname, verbose):
     try:
       proc = sp.Popen('pdflatex '+pname, shell=True, stderr=sp.STDOUT)
       proc.wait()
-      proc = sp.Popen(['biber', pname], stdout=sp.PIPE)
-      biber_msg = proc.communicate()[0]
-      if "ERROR - Cannot find control file 'main.bcf'!" in biber_msg.decode():
-        proc = sp.Popen('bibtex '+pname, shell=True, stderr=sp.STDOUT)
-        proc.wait()
+      if Path(pname+'.bcf') in Path().iterdir():
+        proc = sp.Popen('biber '+pname, shell=True, stderr=sp.STDOUT)
       else:
-        print(biber_msg)
+        proc = sp.Popen('bibtex '+pname, shell=True, stderr=sp.STDOUT)
+      proc.wait()
       proc = sp.Popen('pdflatex '+pname, shell=True, stderr=sp.STDOUT)
       proc.wait()
       proc = sp.Popen('pdflatex '+pname, shell=True, stderr=sp.STDOUT)
@@ -113,11 +111,11 @@ def makepdf(pname, verbose):
     try:
       proc = sp.Popen(['pdflatex', pname], stdout=sp.PIPE)
       proc.communicate()
-      proc = sp.Popen(['biber', pname], stdout=sp.PIPE)
-      biber_msg = proc.communicate()[0]
-      if "ERROR - Cannot find control file 'main.bcf'!" in biber_msg.decode():
+      if Path(pname+'.bcf') in Path().iterdir():
+        proc = sp.Popen(['biber', pname], stdout=sp.PIPE)
+      else:
         proc = sp.Popen(['bibtex', pname], stdout=sp.PIPE)
-        proc.communicate()
+      proc.communicate()
       proc = sp.Popen(['pdflatex', pname], stdout=sp.PIPE)
       proc.communicate()
       proc = sp.Popen(['pdflatex', pname], stdout=sp.PIPE)
