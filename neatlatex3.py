@@ -93,15 +93,21 @@ def makepdf(pname, verbose):
     try:
       proc = sp.Popen('pdflatex '+pname, shell=True, stderr=sp.STDOUT)
       proc.wait()
+      log.info('[done] pdflatex pass 1')
       if Path(pname+'.bcf') in Path().iterdir():
         proc = sp.Popen('biber '+pname, shell=True, stderr=sp.STDOUT)
+        proc.wait()
+        log.info('[done] biber')
       else:
         proc = sp.Popen('bibtex '+pname, shell=True, stderr=sp.STDOUT)
-      proc.wait()
+        proc.wait()
+        log.info('[done] bibtex')
       proc = sp.Popen('pdflatex '+pname, shell=True, stderr=sp.STDOUT)
       proc.wait()
+      log.info('[done] pdflatex pass 2')
       proc = sp.Popen('pdflatex '+pname, shell=True, stderr=sp.STDOUT)
       proc.wait()
+      log.info('[done] pdflatex pass 3')
 
     except Exception as e:
       log.critical('{}'.format(e))
@@ -111,15 +117,21 @@ def makepdf(pname, verbose):
     try:
       proc = sp.Popen(['pdflatex', pname], stdout=sp.PIPE)
       proc.communicate()
+      log.info('[done] pdflatex pass 1')
       if Path(pname+'.bcf') in Path().iterdir():
         proc = sp.Popen(['biber', pname], stdout=sp.PIPE)
+        proc.communicate()
+        log.info('[done] biber')
       else:
         proc = sp.Popen(['bibtex', pname], stdout=sp.PIPE)
-      proc.communicate()
+        proc.communicate()
+        log.info('[done] bibtex')
       proc = sp.Popen(['pdflatex', pname], stdout=sp.PIPE)
       proc.communicate()
+      log.info('[done] pdflatex pass 2')
       proc = sp.Popen(['pdflatex', pname], stdout=sp.PIPE)
       proc.communicate()
+      log.info('[done] pdflatex pass 3')
       
     except Exception as e:
       log.critical('{}'.format(e))

@@ -28,8 +28,6 @@ def findInstDir(caller_scr_loc):
     return None
 
 
-
-
 def nl_uninstall(caller_scr_loc, is_rb, insdir_path = None):
   # Uninstallation
   if is_rb:
@@ -73,10 +71,21 @@ def nl_uninstall(caller_scr_loc, is_rb, insdir_path = None):
     return -1
 
   flist = os.listdir(udir)
-  if not ('neatlatex3.py' in flist and 'env' in flist):
+  if not 'neatlatex3.py' in flist:
     print('Cannot identify NeatLatex installation at {}'.format(udir))
     uninst_fail = True
     return -1
+  elif not 'env' in flist:
+    print('NeatLatex script found, however virtual environment is missing.')
+    print('This might or might not be NeatLatex installation location.')
+    print('Removing this directory is risky.')
+    proceed = input(
+      'Are you sure you want to proceed with removing {}? (yes/No): '
+      .format(udir))
+    if not proceed.lower() in ['yes', 'y']:
+      print('Could not find NeatLatex installation directory.')
+      uninst_fail = True
+      return -1
 
   print('Removing:')
   for item in insfiles:
@@ -166,30 +175,30 @@ def main():
         ins_fail = True
         return -1
 
-    if not ins_fail:
-      try:
-        import virtualenv
-      except ImportError as imperr:
-        print('Unable to import virtualenv.')
-        print(imperr)
-        ins_fail = True
-        return -1
+    # if not ins_fail:
+    #   try:
+    #     import virtualenv
+    #   except ImportError as imperr:
+    #     print('Unable to import virtualenv.')
+    #     print(imperr)
+    #     ins_fail = True
+    #     return -1
 
     if not (insdir.strip('/').endswith('neatlatex') or
             insdir.strip('/').endswith('NeatLatex')):
       print('[Warning] Your installation directory name is not neatlatex or NeatLatex.')
       sure = input('Are you sure you want to install in {}? (yes/No) '
                    .format(insdir))
-      if not sure in ['Y', 'y', 'Yes', 'yes']:
+      if not sure.lower() in ['y', 'yes']:
         return -1
-      
-    print('Installing NeatLatex at', insdir)            
-      
+
+    # print('Installing NeatLatex at', insdir)
     if not ins_fail:
       try:
         os.makedirs(insdir, exist_ok=True)
         shutil.copyfile('./neatlatex3.py', insdir+'/neatlatex3.py')
         shutil.copyfile('./reqs.pip', insdir+'/reqs.pip')
+        print('Installation files copied to {}'.format(insdir))
       except Exception as e:
         print(e)
         ins_fail = True
@@ -197,15 +206,16 @@ def main():
         return -1
 
     if not ins_fail:
+      pwd = os.getcwd()
+      # os.chdir(insdir)
       try:
-        pwd = os.getcwd()
-        os.chdir(insdir)
-        subprocess.run(['virtualenv', '--python=python3', 'env'])
-        # subprocess.run(['./env/bin/activate'])
-        subprocess.run(['./env/bin/pip3',
-                        'install', '-r', 'reqs.pip'])
-        # subprocess.run(['./env/bin/deactivate'])
+        subprocess.run(['python3', '-m', 'venv', '{}/env'.format(insdir)])
+        # subprocess.run(['{}/env/bin/activate'.format(insdir)])
+        subprocess.run(['{}/env/bin/pip3'.format(insdir),
+                        'install', '-r', '{}/reqs.pip'.format(insdir)])
+        # subprocess.run(['deactivate'])
         os.chdir(pwd)
+        print('Python3 requirements installed')
       except Exception as e:
         print(e)
         ins_fail = True
