@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-
+import pdb
 import argparse
 import os, sys
 import shutil
@@ -109,8 +109,8 @@ def nl_uninstall(caller_scr_loc, is_rb, insdir_path = None):
         print(e)
         uninst_fail = True
   print('from %s' %udir)
-        
-  print('Removing base directory %s and caller script %s/neatlatex' %(udir, caller_scr_loc))
+  print('Removing base directory {} and caller script {}/neatlatex'
+        .format(udir, caller_scr_loc))
   try:
     os.rmdir(udir)
   except FileNotFoundError:
@@ -130,7 +130,12 @@ def nl_uninstall(caller_scr_loc, is_rb, insdir_path = None):
   if not uninst_fail:
     print('NeatLatex was successfully uninstalled.')
   else:
-    print('Some installation files could not be located or the uninstallation was not completed successfully.\nSome files/directories might be remaining. Check possible installation directories and /usr/local/bin')
+    print("""
+Some installation files could not be located,
+or the uninstallation was not completed successfully.
+Some files/directories might be remaining. 
+Check possible installation directories and /usr/local/bin
+""")
     return -1
 
 
@@ -166,7 +171,11 @@ def main():
       if os.path.isdir(insdir):
         if len(os.listdir(insdir)):
           print('{} is not empty.'.format(insdir))
-          print('Cannot install NeatLatex there.\nIf you want to install NeatLatex inside the indicated directory, add "/neatlatex" to the end of your installation path.')
+          print("""
+Cannot install NeatLatex there.
+If you want to install NeatLatex inside the indicated directory, 
+add "/neatlatex" to the end of your installation path.
+""")
           ins_fail = True
           return -1
       else:
@@ -186,7 +195,9 @@ def main():
 
     if not (insdir.strip('/').endswith('neatlatex') or
             insdir.strip('/').endswith('NeatLatex')):
-      print('[Warning] Your installation directory name is not neatlatex or NeatLatex.')
+      print("""
+      [Warning] Your installation directory is not neatlatex or NeatLatex.
+      """)
       sure = input('Are you sure you want to install in {}? (yes/No) '
                    .format(insdir))
       if not sure.lower() in ['y', 'yes']:
@@ -231,8 +242,9 @@ def main():
       try:
         with open(insdir+'/neatlatex', 'w') as runfile:
           runfile.write(run_scr)
-        subprocess.run(['chmod', '755', insdir+'/neatlatex'])
-        subprocess.run(['sudo', 'mv', insdir+'/neatlatex', caller_scr_loc])      
+        subprocess.run(['chmod', '-R', '755', insdir])
+        subprocess.run(['sudo', 'mv', insdir+'/neatlatex', caller_scr_loc])
+        # pdb.set_trace()
       except Exception as e:
         print(e)
         ins_fail = True
@@ -241,7 +253,10 @@ def main():
       
     if not ins_fail:
       print('NeatLatex installed successfully at %s' %insdir)
-      print('A caller script has been created at %s/neatlatex.\nAdd %s to your system PATH variable, if it already is not.' %(caller_scr_loc,caller_scr_loc))
+      print("""
+      A caller script has been created at {}/neatlatex.
+      Add {} to your system PATH variable, if it already is not.
+      """.format(caller_scr_loc,caller_scr_loc))
     else:
       print('Installer has encountered errors during isntallation.')
       nl_uninstall(caller_scr_loc, True)
