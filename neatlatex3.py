@@ -4,6 +4,7 @@ import argparse as argp
 import shutil as sh
 import subprocess as sp
 import bibtexparser
+import sys
 import logging
 from pathlib import Path
 log = logging.getLogger(__name__)
@@ -108,7 +109,9 @@ def makepdf(pname, verbose):
       proc = sp.Popen('pdflatex '+pname, shell=True, stderr=sp.STDOUT)
       proc.wait()
       log.info('[done] pdflatex pass 3')
-
+    except KeyboardInterrupt:
+      sys.stdout.flush()
+      sys.exit(-1)
     except Exception as e:
       log.critical('{}'.format(e))
       return -1
@@ -132,7 +135,9 @@ def makepdf(pname, verbose):
       proc = sp.Popen(['pdflatex', pname], stdout=sp.PIPE)
       proc.communicate()
       log.info('[done] pdflatex pass 3')
-      
+    except KeyboardInterrupt:
+      sys.stdout.flush()
+      sys.exit(-1)      
     except Exception as e:
       log.critical('{}'.format(e))
       return -1
@@ -249,37 +254,52 @@ def main():
   
   tidyup(outDir, outputExts, intermDir, intermExts, verbose)
 
+  # # Passive aggressive helper
+  # if verbose:
+  #   while True:
+  #     seepdf = False
+  #     wannasee = input('Do you want to see the output pdf file or what? (Yes/no): ')
+  #     if wannasee == '' or wannasee == None:
+  #       print('No answer!.. OK. Here it is just in case.')
+  #       seepdf = True
+  #     elif wannasee in ['Yes', 'yes', 'y', 'Y']:
+  #       print('\nHere is your gloriuos work.')
+  #       seepdf = True
+  #     elif wannasee == 'YES':
+  #       print('\nAlright man.. Calm down! Here\'s your damn paper.. Have a blast!')
+  #       seepdf = True
+  #     elif wannasee in ['No', 'no', 'N', 'n']:
+  #       print('\nSure.. you made me do all that and you don\'t even wanna see it.. No problem! It\'s fine.. It\'s totally fine..')
+  #     elif wannasee == 'NO':
+  #       print('\nYou know what! I don\'t wanna see it either! I don\'t even CARE what it looks like!')
+  #     elif wannasee.lower() == 'or what':
+  #       print('\nCome come, I clap for you.. you veeery funny ah!')
+  #     else:
+  #       print('\nDid you really think the person who wrote this script made me smart enough to understand what you\'re saying? Yes or No man.. YES or NO!\nDamn it.. every day a smart ass! every damn day!')
+  #       continue
+
   # Passive aggressive helper
   if verbose:
     while True:
       seepdf = False
-      wannasee = input('Do you want to see the output pdf file or what? (Yes/no): ')
+      wannasee = input('Open output pdf file? (Yes/no): ')
       if wannasee == '' or wannasee == None:
-        print('No answer!.. OK. Here it is just in case.')
         seepdf = True
-      elif wannasee in ['Yes', 'yes', 'y', 'Y']:
-        print('\nHere is your gloriuos work.')
+      elif wannasee.lower() in ['yes', 'y']:
+        print('\nHere is your gloriuos work!')
         seepdf = True
-      elif wannasee == 'YES':
-        print('\nAlright man.. Calm down! Here\'s your damn paper.. Have a blast!')
-        seepdf = True
-      elif wannasee in ['No', 'no', 'N', 'n']:
-        print('\nSure.. you made me do all that and you don\'t even wanna see it.. No problem! It\'s fine.. It\'s totally fine..')
-      elif wannasee == 'NO':
-        print('\nYou know what! I don\'t wanna see it either! I don\'t even CARE what it looks like!')
-      elif wannasee.lower() == 'or what':
-        print('\nCome come, I clap for you.. you veeery funny ah!')
+      elif wannasee.lower() in ['no', 'n']:
+        break
       else:
-        print('\nDid you really think the person who wrote this script made me smart enough to understand what you\'re saying? Yes or No man.. YES or NO!\nDamn it.. every day a smart ass! every damn day!')
+        print('Invalid input.')
         continue
 
       if seepdf:
-        sh.os.popen('xdg-open ' + Path(outDir, pname + '.pdf')
-                    .as_posix())
+        sh.os.popen('xdg-open ' + Path(outDir, pname + '.pdf').as_posix())
         break
       else:
         break
-      
+
   else:
     log.info('Done! Find {} files(s) in {} directory.'
              .format(','.join(outputExts), outDir))
