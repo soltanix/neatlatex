@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-import pdb
 import argparse
 import os, sys
 import shutil
@@ -131,11 +130,11 @@ def nl_uninstall(caller_scr_loc, is_rb, insdir_path = None):
     print('NeatLatex was successfully uninstalled.')
   else:
     print("""
-Some installation files could not be located,
-or the uninstallation was not completed successfully.
-Some files/directories might be remaining. 
-Check possible installation directories and /usr/local/bin
-""")
+    Some installation files could not be located,
+    or # TODO: he uninstallation was not completed successfully.
+    Some files/directories might be remaining. 
+    Check possible installation directories and /usr/local/bin
+    """)
     return -1
 
 
@@ -151,8 +150,7 @@ def main():
   if (sys.version_info < (3, 0)):
     print('NeatLatex requires Python 3.')
     return
-  
-  caller_scr_loc = '/usr/local/bin'
+  caller_scr_loc = Path(Path.home(), '.local', 'bin').as_posix()
   rollback_success = 0
 
   if not os.access(caller_scr_loc, os.W_OK):
@@ -172,10 +170,10 @@ def main():
         if len(os.listdir(insdir)):
           print('{} is not empty.'.format(insdir))
           print("""
-Cannot install NeatLatex there.
-If you want to install NeatLatex inside the indicated directory, 
-add "/neatlatex" to the end of your installation path.
-""")
+          Cannot install NeatLatex there.
+          If you want to install NeatLatex inside the indicated directory, 
+          add "/neatlatex" to the end of your installation path.
+          """)
           ins_fail = True
           return -1
       else:

@@ -4,6 +4,7 @@ import argparse as argp
 import shutil as sh
 import subprocess as sp
 import bibtexparser
+import platform
 import sys
 import logging
 from pathlib import Path
@@ -211,7 +212,7 @@ def main():
                  '.lof', '.lot', '.run.xml', '.bcf', '.toc', '.fdb_latexmk',
                 '.fls', '.out.ps', '.tdo']
   bibexclude = ['abstract', 'keywords', 'file', 'comment', 'url']
-  strSubList = [('{~}','~'), ('{\&}','&'), ('{\_}','_'), ('{\%}','%'),
+  strSubList = [('{~}','~'), ('{\\&}','&'), ('{\\_}','_'), ('{\\%}','%'),
                 ('%20',' '), ('%5F', '_'), ('%7E', '~'),('%3D', '='),
                 ('%2F', '/'), ('%2B', '+'),('%3B', ';')]
   allExts = outputExts + intermExts
@@ -295,7 +296,13 @@ def main():
         continue
 
       if seepdf:
-        sh.os.popen('xdg-open ' + Path(outDir, pname + '.pdf').as_posix())
+        outpath = Path(outDir, pname+'.pdf').as_posix()
+        if platform.system() == 'Darwin':
+          sp.call(('open', outpath))
+        elif platform.system() == 'Windows':
+          os.startfile(outpath)
+        else:
+          sp.call(('xdg-open', outpath))
         break
       else:
         break
